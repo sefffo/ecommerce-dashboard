@@ -1,8 +1,5 @@
 import api from './axios'
 
-// UserDTO from backend: record UserDTO(string Email, string DisplayName, string Token, string RefreshToken)
-// GetAllUsers: GET /api/Authentication/users  (SuperAdmin only)
-// AssignRole:  POST /api/Authentication/assign-role  { UserEmail, RoleName }
 export interface UserDto {
   email: string
   displayName: string
@@ -21,4 +18,10 @@ export const usersApi = {
 
   assignRole: (dto: AssignRoleDto) =>
     api.post('/api/Authentication/assign-role', dto).then((r) => r.data),
+
+  deleteUser: (email: string) =>
+    api.delete(`/api/Authentication/users/${encodeURIComponent(email)}`).then((r) => r.data),
+
+  revokeToken: (email: string) =>
+    api.post(`/api/Authentication/users/${encodeURIComponent(email)}/revoke-token`).then((r) => r.data),
 }
