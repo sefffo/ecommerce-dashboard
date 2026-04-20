@@ -11,7 +11,7 @@ export interface AuthResponse {
 }
 
 export interface RefreshTokenDto {
-  token: string
+  accessToken: string
   refreshToken: string
 }
 

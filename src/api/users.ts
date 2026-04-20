@@ -3,8 +3,6 @@ import api from './axios'
 export interface UserDto {
   email: string
   displayName: string
-  token: string
-  refreshToken: string
 }
 
 export interface AssignRoleDto {
