@@ -11,6 +11,7 @@ import { TypesPage } from '@/pages/TypesPage'
 import { OrdersPage } from '@/pages/OrdersPage'
 import { OrderDetailPage } from '@/pages/OrderDetailPage'
 import { UsersPage } from '@/pages/UsersPage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
 import { SuperAdminRoute } from '@/components/shared/SuperAdminRoute'
 
@@ -20,9 +21,12 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
       </Route>
+
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<OverviewPage />} />
@@ -36,7 +40,8 @@ export default function App() {
           </Route>
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
