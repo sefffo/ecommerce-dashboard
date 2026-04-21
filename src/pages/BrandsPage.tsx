@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { productsApi } from '@/api/products'
-import { TableSkeleton } from '@/components/shared/Skeleton'
+import { ListSkeleton } from '@/components/shared/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Modal } from '@/components/shared/Modal'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -47,61 +47,56 @@ export function BrandsPage() {
   })
 
   return (
-    <div className="space-y-5 max-w-2xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 max-w-3xl">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-text">Brands</h1>
-          <p className="text-muted text-sm">{brands?.length ?? 0} brands</p>
+          <h2 className="h-page">Brands</h2>
+          <p className="h-page-sub">{brands?.length ?? 0} brand{brands?.length === 1 ? '' : 's'}</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreate(true)}>
+        <button className="btn-primary w-full sm:w-auto" onClick={() => setShowCreate(true)}>
           <Plus className="w-4 h-4" /> Add Brand
         </button>
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/[0.06]">
-              <th className="px-5 py-3 text-left text-xs font-medium text-muted uppercase tracking-wide">ID</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-muted uppercase tracking-wide">Name</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-muted uppercase tracking-wide">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <TableSkeleton cols={3} rows={6} />
-            ) : !brands?.length ? (
-              <tr>
-                <td colSpan={3}>
-                  <EmptyState
-                    icon={Tag}
-                    title="No brands yet"
-                    description="Create your first brand to assign to products."
-                    action={
-                      <button className="btn-primary" onClick={() => setShowCreate(true)}>
-                        <Plus className="w-4 h-4" /> Add Brand
-                      </button>
-                    }
-                  />
-                </td>
-              </tr>
-            ) : brands.map((b) => (
-              <tr key={b.id} className="border-b border-white/[0.04] table-row-hover">
-                <td className="px-5 py-3 font-mono text-xs text-muted">{b.id}</td>
-                <td className="px-5 py-3 text-sm text-text font-medium">{b.name}</td>
-                <td className="px-5 py-3">
-                  <button
-                    onClick={() => setDeleteId(b.id)}
-                    className="btn-ghost p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {isLoading ? (
+        <ListSkeleton rows={5} />
+      ) : !brands?.length ? (
+        <div className="card p-8">
+          <EmptyState
+            icon={Tag}
+            title="No brands yet"
+            description="Create your first brand to assign to products."
+            action={
+              <button className="btn-primary" onClick={() => setShowCreate(true)}>
+                <Plus className="w-4 h-4" /> Add Brand
+              </button>
+            }
+          />
+        </div>
+      ) : (
+        <div className="card divide-y divide-white/[0.04]">
+          {brands.map((b) => (
+            <div key={b.id} className="flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-white/[0.02] transition-colors">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+                  <Tag className="w-4 h-4 text-accent" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-text font-medium truncate">{b.name}</p>
+                  <p className="text-xs text-muted font-mono">#{b.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeleteId(b.id)}
+                className="btn-icon text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                aria-label={`Delete ${b.name}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <Modal open={showCreate} onOpenChange={setShowCreate} title="Add Brand" size="sm">
         <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
@@ -110,7 +105,7 @@ export function BrandsPage() {
             <input {...register('name')} className="input" placeholder="e.g. Nike" autoFocus />
             {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
           </div>
-          <div className="flex gap-3 justify-end">
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
             <button type="button" className="btn-secondary" onClick={() => { setShowCreate(false); reset() }}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={createMutation.isPending}>
               {createMutation.isPending ? 'Creating…' : 'Create'}
@@ -124,6 +119,7 @@ export function BrandsPage() {
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Delete brand?"
         description="Products assigned to this brand may be affected."
+        confirmLabel="Delete"
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}
         loading={deleteMutation.isPending}
       />
