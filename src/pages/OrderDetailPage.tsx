@@ -2,12 +2,24 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AxiosError } from 'axios'
 import { ordersApi } from '@/api/orders'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Skeleton } from '@/components/shared/Skeleton'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
-const STATUSES = ['PaymentPending', 'PaymentReceived', 'Paid', 'Preparing', 'Shipped', 'Delivered', 'Cancelled']
+// Must match the backend OrderStatus enum in ECommerce.Domain/Entities/OrderModule/OrderStatus.cs
+const STATUSES = [
+  'Pending',
+  'Processing',
+  'PaymentPending',
+  'PaymentReceived',
+  'Paid',
+  'Preparing',
+  'Shipped',
+  'Delivered',
+  'Cancelled',
+]
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -27,7 +39,18 @@ export function OrderDetailPage() {
       qc.invalidateQueries({ queryKey: ['orders'] })
       toast.success('Order status updated')
     },
-    onError: () => toast.error('Failed to update status'),
+    onError: (err: unknown) => {
+      // Surface the real reason (validation / 403 / 404) instead of a generic message
+      let message = 'Failed to update status'
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as { detail?: string; title?: string; error?: string } | undefined
+        const detail = data?.detail ?? data?.error ?? data?.title
+        if (detail) message = detail
+        else if (err.response?.status === 403) message = 'You need Admin or SuperAdmin role to change order status.'
+        else if (err.response?.status === 404) message = 'Order not found.'
+      }
+      toast.error(message)
+    },
   })
 
   if (isLoading) {
