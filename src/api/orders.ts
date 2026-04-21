@@ -77,8 +77,9 @@ export const ordersApi = {
   getDeliveryMethods: () =>
     api.get('/api/Order/DeliveryMethods').then((r) => r.data),
 
-  // NOTE: backend does not yet have a PATCH /api/Order/{id}/status endpoint.
-  // This is a placeholder so the UI compiles. Wire it up once the endpoint exists.
+  // PATCH /api/Order/{id}/status — Admin/SuperAdmin only. Backend invalidates
+  // every user's cached listing via pattern-based Redis eviction so the admin
+  // dashboard reflects the new status immediately (no 60-minute wait for TTL).
   updateStatus: (id: string, status: string) =>
     api.patch(`/api/Order/${id}/status`, { status }).then((r) => r.data),
 }

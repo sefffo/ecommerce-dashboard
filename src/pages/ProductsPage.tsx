@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Trash2, Package } from 'lucide-react'
+import { Plus, Search, Trash2, Package, Upload, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { AxiosError } from 'axios'
 import { productsApi } from '@/api/products'
 import { TableSkeleton, ListSkeleton } from '@/components/shared/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -13,18 +14,36 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { formatCurrency } from '@/lib/utils'
 import type { CreateProductDto, ProductDto } from '@/features/products/types'
 
+// Image URL is produced by the upload endpoint (not entered by the user),
+// so we only validate that it's a non-empty string here. The file itself is
+// validated client-side in handleFileChange (type + size).
 const schema = z.object({
   name: z.string().min(3, 'Min 3 chars').max(100),
   description: z.string().min(20, 'Min 20 chars').max(500),
-  pictureUrl: z.string().url('Must be a valid URL'),
+  pictureUrl: z.string().min(1, 'Upload an image'),
   price: z.coerce.number().min(0.01, 'Must be > 0'),
   productType: z.string().min(1, 'Select a type'),
   productBrand: z.string().min(1, 'Select a brand'),
 })
 type FormData = z.infer<typeof schema>
 
+const MAX_IMAGE_MB = 5
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
 function fallbackImage(e: React.SyntheticEvent<HTMLImageElement>) {
   ;(e.target as HTMLImageElement).src = 'https://placehold.co/96x96/1c1c1c/71717a?text=?'
+}
+
+/**
+ * Extract a human-readable error message from an axios error.
+ * Backend `ProblemDetails` includes { title, detail } — we prefer `detail`.
+ */
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof AxiosError) {
+    const data = err.response?.data as { detail?: string; title?: string; error?: string } | undefined
+    return data?.detail ?? data?.error ?? data?.title ?? fallback
+  }
+  return fallback
 }
 
 export function ProductsPage() {
@@ -35,6 +54,9 @@ export function ProductsPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', { search, brandId, typeId, pageIndex: page }],
@@ -43,9 +65,57 @@ export function ProductsPage() {
   const { data: brands } = useQuery({ queryKey: ['brands'], queryFn: productsApi.getBrands })
   const { data: types } = useQuery({ queryKey: ['types'], queryFn: productsApi.getTypes })
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { pictureUrl: '' },
   })
+  const pictureUrl = watch('pictureUrl')
+
+  const resetForm = () => {
+    reset()
+    setPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Client-side validation so invalid files never leave the browser
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast.error('Unsupported image type. Use JPEG, PNG, WebP, or GIF.')
+      e.target.value = ''
+      return
+    }
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      toast.error(`Image is too large. Max ${MAX_IMAGE_MB}MB.`)
+      e.target.value = ''
+      return
+    }
+
+    // Optimistic preview while the upload is in-flight
+    const localPreview = URL.createObjectURL(file)
+    setPreviewUrl(localPreview)
+    setUploading(true)
+    try {
+      const url = await productsApi.uploadImage(file)
+      setValue('pictureUrl', url, { shouldValidate: true })
+      toast.success('Image uploaded')
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to upload image'))
+      setPreviewUrl(null)
+      setValue('pictureUrl', '', { shouldValidate: true })
+      e.target.value = ''
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const clearImage = () => {
+    setPreviewUrl(null)
+    setValue('pictureUrl', '', { shouldValidate: true })
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const createMutation = useMutation({
     mutationFn: (dto: CreateProductDto) => productsApi.create(dto),
@@ -53,9 +123,9 @@ export function ProductsPage() {
       qc.invalidateQueries({ queryKey: ['products'] })
       toast.success('Product created')
       setShowCreate(false)
-      reset()
+      resetForm()
     },
-    onError: () => toast.error('Failed to create product'),
+    onError: (err: unknown) => toast.error(errorMessage(err, 'Failed to create product')),
   })
 
   const deleteMutation = useMutation({
@@ -65,7 +135,7 @@ export function ProductsPage() {
       toast.success('Product deleted')
       setDeleteId(null)
     },
-    onError: () => toast.error('Failed to delete product'),
+    onError: (err: unknown) => toast.error(errorMessage(err, 'Failed to delete product')),
   })
 
   const totalPages = data ? Math.ceil(data.totalCount / 10) : 1
@@ -251,7 +321,12 @@ export function ProductsPage() {
       </div>
 
       {/* Create Modal */}
-      <Modal open={showCreate} onOpenChange={setShowCreate} title="Add Product" size="lg">
+      <Modal
+        open={showCreate}
+        onOpenChange={(o) => { setShowCreate(o); if (!o) resetForm() }}
+        title="Add Product"
+        size="lg"
+      >
         <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
@@ -269,11 +344,70 @@ export function ProductsPage() {
               <input {...register('price')} type="number" step="0.01" className="input" placeholder="99.99" />
               {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price.message}</p>}
             </div>
+
+            {/* Image upload — replaces the previous raw-URL text input.
+                The file is POSTed to /api/Upload; the returned public URL is
+                stored in the `pictureUrl` form field, which is what the
+                CreateProductDto expects. */}
             <div>
-              <label className="label">Image URL</label>
-              <input {...register('pictureUrl')} className="input" placeholder="https://…" />
+              <label className="label">Product image</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                onChange={handleFileChange}
+                className="sr-only"
+                id="product-image-input"
+              />
+              {/* Hidden field keeps the uploaded URL in the form state so react-hook-form
+                  can validate it and submit it with the rest of the DTO. */}
+              <input type="hidden" {...register('pictureUrl')} />
+
+              {!previewUrl && !pictureUrl ? (
+                <label
+                  htmlFor="product-image-input"
+                  className="flex items-center justify-center gap-2 input h-[42px] cursor-pointer hover:border-white/20 transition-colors"
+                >
+                  <Upload className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-muted">Choose image…</span>
+                </label>
+              ) : (
+                <div className="flex items-center gap-3 p-2 rounded-lg border border-white/[0.06] bg-surface-2">
+                  <div className="relative w-12 h-12 rounded-md overflow-hidden bg-surface-3 shrink-0">
+                    <img
+                      src={previewUrl ?? pictureUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={fallbackImage}
+                    />
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-text truncate">
+                      {uploading ? 'Uploading…' : 'Image ready'}
+                    </p>
+                    {pictureUrl && !uploading && (
+                      <p className="text-[10px] text-muted truncate font-mono">{pictureUrl}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    disabled={uploading}
+                    className="btn-icon text-muted hover:text-red-400 disabled:opacity-50"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               {errors.pictureUrl && <p className="text-red-400 text-xs mt-1">{errors.pictureUrl.message}</p>}
             </div>
+
             <div>
               <label className="label">Brand</label>
               <select {...register('productBrand')} className="input">
@@ -292,9 +426,13 @@ export function ProductsPage() {
             </div>
           </div>
           <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end pt-2">
-            <button type="button" className="btn-secondary" onClick={() => { setShowCreate(false); reset() }}>Cancel</button>
-            <button type="submit" className="btn-primary" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Creating…' : 'Create Product'}
+            <button type="button" className="btn-secondary" onClick={() => { setShowCreate(false); resetForm() }}>Cancel</button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={createMutation.isPending || uploading}
+            >
+              {createMutation.isPending ? 'Creating…' : uploading ? 'Waiting for upload…' : 'Create Product'}
             </button>
           </div>
         </form>

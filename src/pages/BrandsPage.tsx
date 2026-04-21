@@ -5,11 +5,20 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { AxiosError } from 'axios'
 import { productsApi } from '@/api/products'
 import { ListSkeleton } from '@/components/shared/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Modal } from '@/components/shared/Modal'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof AxiosError) {
+    const data = err.response?.data as { detail?: string; title?: string; error?: string } | undefined
+    return data?.detail ?? data?.error ?? data?.title ?? fallback
+  }
+  return fallback
+}
 
 const schema = z.object({ name: z.string().min(1, 'Name is required').max(100) })
 type FormData = z.infer<typeof schema>
@@ -26,24 +35,28 @@ export function BrandsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => productsApi.createBrand(data.name),
+    mutationFn: (data: FormData) => productsApi.createBrand({ name: data.name }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['brands'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
       toast.success('Brand created')
       setShowCreate(false)
       reset()
     },
-    onError: () => toast.error('Failed to create brand'),
+    onError: (err: unknown) => toast.error(errorMessage(err, 'Failed to create brand')),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => productsApi.deleteBrand(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['brands'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
       toast.success('Brand deleted')
       setDeleteId(null)
     },
-    onError: () => toast.error('Failed to delete brand'),
+    onError: (err: unknown) =>
+      // Backend returns a 400 with `detail` = "Cannot delete brand 'X' — N product(s) still reference it…"
+      toast.error(errorMessage(err, 'Failed to delete brand')),
   })
 
   return (
@@ -118,7 +131,7 @@ export function BrandsPage() {
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Delete brand?"
-        description="Products assigned to this brand may be affected."
+        description="If any products still use this brand, the delete will be blocked."
         confirmLabel="Delete"
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}
         loading={deleteMutation.isPending}

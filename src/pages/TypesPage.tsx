@@ -5,11 +5,20 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { AxiosError } from 'axios'
 import { productsApi } from '@/api/products'
 import { ListSkeleton } from '@/components/shared/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Modal } from '@/components/shared/Modal'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof AxiosError) {
+    const data = err.response?.data as { detail?: string; title?: string; error?: string } | undefined
+    return data?.detail ?? data?.error ?? data?.title ?? fallback
+  }
+  return fallback
+}
 
 const schema = z.object({ name: z.string().min(1, 'Name is required').max(100) })
 type FormData = z.infer<typeof schema>
@@ -26,24 +35,26 @@ export function TypesPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => productsApi.createType(data.name),
+    mutationFn: (data: FormData) => productsApi.createType({ name: data.name }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['types'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
       toast.success('Type created')
       setShowCreate(false)
       reset()
     },
-    onError: () => toast.error('Failed to create type'),
+    onError: (err: unknown) => toast.error(errorMessage(err, 'Failed to create type')),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => productsApi.deleteType(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['types'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
       toast.success('Type deleted')
       setDeleteId(null)
     },
-    onError: () => toast.error('Failed to delete type'),
+    onError: (err: unknown) => toast.error(errorMessage(err, 'Failed to delete type')),
   })
 
   return (
@@ -118,7 +129,7 @@ export function TypesPage() {
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Delete type?"
-        description="Products assigned to this type may be affected."
+        description="If any products still use this type, the delete will be blocked."
         confirmLabel="Delete"
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}
         loading={deleteMutation.isPending}
