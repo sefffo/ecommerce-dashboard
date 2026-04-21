@@ -40,7 +40,7 @@ export function OverviewPage() {
   })
 
   const revenue = useMemo(
-    () => orders?.reduce((sum, o) => sum + (o.total || 0), 0) || 0,
+    () => orders?.reduce((sum, o) => sum + (o.subTotal || 0), 0) || 0,
     [orders]
   )
 
@@ -136,7 +136,7 @@ export function OverviewPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                {['Order ID', 'Customer', 'Total', 'Status', 'Date'].map((h) => (
+                {['Order ID', 'Customer', 'Subtotal', 'Status', 'Date'].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-medium text-muted uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -148,7 +148,7 @@ export function OverviewPage() {
                   <tr key={order.id} className="border-b border-white/[0.04] table-row-hover">
                     <td className="px-5 py-3 font-mono text-xs text-muted">{order.id.toString().slice(0, 8)}</td>
                     <td className="px-5 py-3 text-sm text-text">{order.userEmail}</td>
-                    <td className="px-5 py-3 text-sm font-mono text-text">{formatCurrency(order.total)}</td>
+                    <td className="px-5 py-3 text-sm font-mono text-text">{formatCurrency(order.subTotal)}</td>
                     <td className="px-5 py-3"><StatusBadge status={order.orderStatus} /></td>
                     <td className="px-5 py-3 text-sm text-muted">{formatDate(order.orderDate)}</td>
                   </tr>

@@ -18,4 +18,9 @@ export const ordersApi = {
 
   getDeliveryMethods: () =>
     api.get('/api/Order/DeliveryMethods').then((r) => r.data),
+
+  // NOTE: backend does not yet have a PATCH /api/Order/{id}/status endpoint.
+  // This is a placeholder so the UI compiles. Wire it up once the endpoint exists.
+  updateStatus: (id: string, status: string) =>
+    api.patch(`/api/Order/${id}/status`, { status }).then((r) => r.data),
 }
