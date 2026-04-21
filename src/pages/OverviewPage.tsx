@@ -144,10 +144,10 @@ export function OverviewPage() {
             <tbody>
               {loadingOrders
                 ? <TableSkeleton cols={5} rows={6} />
-                : recentOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-white/[0.04] table-row-hover">
-                    <td className="px-5 py-3 font-mono text-xs text-muted">{order.id.toString().slice(0, 8)}</td>
-                    <td className="px-5 py-3 text-sm text-text">{order.userEmail}</td>
+                : recentOrders.map((order, idx) => (
+                  <tr key={order.id ?? idx} className="border-b border-white/[0.04] table-row-hover">
+                    <td className="px-5 py-3 font-mono text-xs text-muted">{order.id != null ? String(order.id).slice(0, 8) : '—'}</td>
+                    <td className="px-5 py-3 text-sm text-text">{order.userEmail ?? '—'}</td>
                     <td className="px-5 py-3 text-sm font-mono text-text">{formatCurrency(order.subTotal)}</td>
                     <td className="px-5 py-3"><StatusBadge status={order.orderStatus} /></td>
                     <td className="px-5 py-3 text-sm text-muted">{formatDate(order.orderDate)}</td>

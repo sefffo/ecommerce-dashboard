@@ -44,14 +44,14 @@ export function OrdersPage() {
                     />
                   </td>
                 </tr>
-              ) : orders.map((o) => (
+              ) : orders.map((o, idx) => (
                 <tr
-                  key={o.id}
+                  key={o.id ?? idx}
                   className="border-b border-white/[0.04] table-row-hover cursor-pointer"
-                  onClick={() => navigate(`/dashboard/orders/${o.id}`)}
+                  onClick={() => o.id != null && navigate(`/dashboard/orders/${o.id}`)}
                 >
-                  <td className="px-5 py-3 font-mono text-xs text-muted">{o.id.toString().slice(0, 8)}…</td>
-                  <td className="px-5 py-3 text-sm text-text">{o.userEmail}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-muted">{o.id != null ? `${String(o.id).slice(0, 8)}…` : '—'}</td>
+                  <td className="px-5 py-3 text-sm text-text">{o.userEmail ?? '—'}</td>
                   <td className="px-5 py-3 text-sm text-muted">{o.orderItems?.length ?? 0}</td>
                   <td className="px-5 py-3 text-sm font-mono text-text">{formatCurrency(o.subTotal)}</td>
                   <td className="px-5 py-3"><StatusBadge status={o.orderStatus} /></td>
