@@ -8,22 +8,20 @@ export interface OrderItemDto {
 export interface AddressDto {
   firstName: string
   lastName: string
+  country: string
   street: string
   city: string
-  state: string
-  zipcode: string
 }
 
 export interface OrderDto {
   id: string
   userEmail: string
   orderItems: OrderItemDto[]
-  shippingAddress: AddressDto
-  deliveryMethod: string
-  shippingPrice: number
-  subtotal: number
+  address: AddressDto
+  deliveryMethod: string | null
+  subTotal: number
   total: number
   orderStatus: string
   orderDate: string
-  paymentIntentId: string
+  paymentInvoiceId: string
 }

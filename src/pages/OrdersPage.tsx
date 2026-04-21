@@ -26,7 +26,7 @@ export function OrdersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                {['Order ID', 'Customer', 'Items', 'Total', 'Status', 'Date', ''].map((h, i) => (
+                {['Order ID', 'Customer', 'Items', 'Subtotal', 'Status', 'Date', ''].map((h, i) => (
                   <th key={i} className="px-5 py-3 text-left text-xs font-medium text-muted uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -53,7 +53,7 @@ export function OrdersPage() {
                   <td className="px-5 py-3 font-mono text-xs text-muted">{o.id.toString().slice(0, 8)}…</td>
                   <td className="px-5 py-3 text-sm text-text">{o.userEmail}</td>
                   <td className="px-5 py-3 text-sm text-muted">{o.orderItems?.length ?? 0}</td>
-                  <td className="px-5 py-3 text-sm font-mono text-text">{formatCurrency(o.total)}</td>
+                  <td className="px-5 py-3 text-sm font-mono text-text">{formatCurrency(o.subTotal)}</td>
                   <td className="px-5 py-3"><StatusBadge status={o.orderStatus} /></td>
                   <td className="px-5 py-3 text-sm text-muted">{formatDateTime(o.orderDate)}</td>
                   <td className="px-5 py-3">

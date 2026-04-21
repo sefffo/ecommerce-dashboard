@@ -7,7 +7,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Skeleton } from '@/components/shared/Skeleton'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
-const STATUSES = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
+const STATUSES = ['PaymentPending', 'PaymentReceived', 'Paid', 'Preparing', 'Shipped', 'Delivered', 'Cancelled']
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -69,30 +69,30 @@ export function OrderDetailPage() {
           </div>
           <div>
             <p className="text-muted text-xs mb-0.5 uppercase tracking-wide">Delivery</p>
-            <p className="text-text">{order.deliveryMethod}</p>
+            <p className="text-text">{order.deliveryMethod ?? '—'}</p>
           </div>
           <div>
             <p className="text-muted text-xs mb-0.5 uppercase tracking-wide">Subtotal</p>
-            <p className="text-text font-mono">{formatCurrency(order.subtotal)}</p>
-          </div>
-          <div>
-            <p className="text-muted text-xs mb-0.5 uppercase tracking-wide">Shipping</p>
-            <p className="text-text font-mono">{formatCurrency(order.shippingPrice)}</p>
+            <p className="text-text font-mono">{formatCurrency(order.subTotal)}</p>
           </div>
           <div>
             <p className="text-muted text-xs mb-0.5 uppercase tracking-wide">Total</p>
             <p className="text-accent font-mono font-semibold">{formatCurrency(order.total)}</p>
           </div>
+          <div>
+            <p className="text-muted text-xs mb-0.5 uppercase tracking-wide">Invoice ID</p>
+            <p className="text-text font-mono text-xs">{order.paymentInvoiceId ?? '—'}</p>
+          </div>
         </div>
 
         {/* Shipping Address */}
-        {order.shippingAddress && (
+        {order.address && (
           <div className="bg-surface-2 rounded-lg p-4 mb-5">
             <p className="text-muted text-xs mb-2 uppercase tracking-wide">Shipping Address</p>
             <p className="text-text text-sm">
-              {order.shippingAddress.firstName} {order.shippingAddress.lastName}<br />
-              {order.shippingAddress.street}, {order.shippingAddress.city}<br />
-              {order.shippingAddress.state} {order.shippingAddress.zipcode}
+              {order.address.firstName} {order.address.lastName}<br />
+              {order.address.street}, {order.address.city}<br />
+              {order.address.country}
             </p>
           </div>
         )}
@@ -120,7 +120,7 @@ export function OrderDetailPage() {
           <p className="text-text text-sm font-medium">Order Items ({order.orderItems?.length ?? 0})</p>
         </div>
         <div className="divide-y divide-white/[0.04]">
-          {order.orderItems?.map((item, i) => (
+          {order.orderItems?.length ? order.orderItems.map((item, i) => (
             <div key={i} className="flex items-center gap-4 px-5 py-4">
               <img
                 src={item.pictureUrl}
@@ -134,7 +134,9 @@ export function OrderDetailPage() {
               </div>
               <p className="text-text text-sm font-mono shrink-0">{formatCurrency(item.price * item.quantity)}</p>
             </div>
-          ))}
+          )) : (
+            <p className="px-5 py-4 text-muted text-sm">No items in this order.</p>
+          )}
         </div>
       </div>
     </div>
