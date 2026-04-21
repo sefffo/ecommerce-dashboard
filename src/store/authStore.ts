@@ -8,6 +8,7 @@ interface AuthState {
   refreshToken: string | null
   isAuthenticated: boolean
   isSuperAdmin: boolean
+  hydrated: boolean
   setTokens: (accessToken: string, refreshToken: string, displayName?: string) => void
   logout: () => void
   hydrateFromStorage: () => void
@@ -31,12 +32,34 @@ function parseUser(token: string, displayName?: string): AuthUser | null {
   }
 }
 
+function getInitialState() {
+  const accessToken = localStorage.getItem('accessToken')
+  const refreshToken = localStorage.getItem('refreshToken')
+  if (accessToken && refreshToken) {
+    const user = parseUser(accessToken)
+    if (user) {
+      return {
+        accessToken,
+        refreshToken,
+        user,
+        isAuthenticated: true,
+        isSuperAdmin: user.role === 'SuperAdmin',
+        hydrated: true,
+      }
+    }
+  }
+  return {
+    accessToken: null,
+    refreshToken: null,
+    user: null,
+    isAuthenticated: false,
+    isSuperAdmin: false,
+    hydrated: true,
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  isSuperAdmin: false,
+  ...getInitialState(),
 
   setTokens: (accessToken, refreshToken, displayName) => {
     localStorage.setItem('accessToken', accessToken)
@@ -48,6 +71,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       user,
       isAuthenticated: true,
       isSuperAdmin: user?.role === 'SuperAdmin',
+      hydrated: true,
     })
   },
 
@@ -60,23 +84,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
-    set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isSuperAdmin: false })
+    set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isSuperAdmin: false, hydrated: true })
   },
 
-  hydrateFromStorage: () => {
-    const accessToken = localStorage.getItem('accessToken')
-    const refreshToken = localStorage.getItem('refreshToken')
-    if (accessToken && refreshToken) {
-      const user = parseUser(accessToken)
-      if (user) {
-        set({
-          accessToken,
-          refreshToken,
-          user,
-          isAuthenticated: true,
-          isSuperAdmin: user.role === 'SuperAdmin',
-        })
-      }
-    }
-  },
+  // kept for backwards compatibility but no longer needed
+  hydrateFromStorage: () => {},
 }))
