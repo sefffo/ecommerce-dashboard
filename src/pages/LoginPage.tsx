@@ -16,8 +16,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 const DEMO_ACCOUNTS = [
-  { label: 'admin', email: 'admin@demo.com', password: '1234' },
-  { label: 'superadmin', email: 'superadmin@demo.com', password: 'super1234' },
+  { label: 'superadmin', email: 'superadmin@ecommerce.com', password: 'SuperAdmin@123' },
 ]
 
 export function LoginPage() {
@@ -65,9 +64,9 @@ export function LoginPage() {
         <h1 className="text-xl font-semibold text-text mb-1 tracking-tight">Sign in</h1>
         <p className="text-muted text-sm mb-3">Enter your credentials to continue</p>
 
-        {/* Demo account hints */}
-        <div className="rounded-lg border border-border bg-surface-offset p-3 mb-5 space-y-1.5">
-          <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">Demo access</p>
+        {/* Demo account hint */}
+        <div className="rounded-lg border border-border bg-surface-offset p-3 mb-5">
+          <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">Quick access</p>
           {DEMO_ACCOUNTS.map((acc) => (
             <button
               key={acc.label}
