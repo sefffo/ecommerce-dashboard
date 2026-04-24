@@ -15,12 +15,17 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+const DEMO_ACCOUNTS = [
+  { label: 'admin', email: 'admin@demo.com', password: '1234' },
+  { label: 'superadmin', email: 'superadmin@demo.com', password: 'super1234' },
+]
+
 export function LoginPage() {
   const navigate = useNavigate()
   const setTokens = useAuthStore((s) => s.setTokens)
   const [showPw, setShowPw] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -33,6 +38,11 @@ export function LoginPage() {
     },
     onError: () => toast.error('Invalid email or password'),
   })
+
+  function fillDemo(email: string, password: string) {
+    setValue('email', email, { shouldValidate: true })
+    setValue('password', password, { shouldValidate: true })
+  }
 
   return (
     <div className="w-full max-w-sm animate-fadeIn">
@@ -53,7 +63,27 @@ export function LoginPage() {
         </div>
 
         <h1 className="text-xl font-semibold text-text mb-1 tracking-tight">Sign in</h1>
-        <p className="text-muted text-sm mb-6">Enter your credentials to continue</p>
+        <p className="text-muted text-sm mb-3">Enter your credentials to continue</p>
+
+        {/* Demo account hints */}
+        <div className="rounded-lg border border-border bg-surface-offset p-3 mb-5 space-y-1.5">
+          <p className="text-[11px] font-medium text-muted uppercase tracking-wide mb-2">Demo access</p>
+          {DEMO_ACCOUNTS.map((acc) => (
+            <button
+              key={acc.label}
+              type="button"
+              onClick={() => fillDemo(acc.email, acc.password)}
+              className="w-full flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs hover:bg-surface-dynamic transition-colors group"
+            >
+              <span className="font-mono text-text/70 group-hover:text-text transition-colors">
+                {acc.email}
+              </span>
+              <span className="font-mono text-muted/50 group-hover:text-muted transition-colors">
+                {acc.password}
+              </span>
+            </button>
+          ))}
+        </div>
 
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
           <div>
