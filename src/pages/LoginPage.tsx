@@ -72,9 +72,9 @@ export function LoginPage() {
               key={acc.label}
               type="button"
               onClick={() => fillDemo(acc.email, acc.password)}
-              className="w-full flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs hover:bg-surface-dynamic transition-colors group"
+              className="w-full flex flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-xs hover:bg-surface-dynamic transition-colors group"
             >
-              <span className="font-mono text-text/70 group-hover:text-text transition-colors">
+              <span className="font-mono text-text/70 group-hover:text-text transition-colors truncate w-full">
                 {acc.email}
               </span>
               <span className="font-mono text-muted/50 group-hover:text-muted transition-colors">
