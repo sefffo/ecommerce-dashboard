@@ -5,7 +5,7 @@
 ### Mobile-first React + TypeScript admin panel for the E-Commerce .NET API — Linear/Vercel-style, JWT auth with auto-refresh, built with production-grade patterns.
 
 [![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-Vercel-000?style=for-the-badge&logo=vercel&logoColor=white)](https://ecommerce-dashboard-one-tawny.vercel.app/)
-[![Backend API](https://img.shields.io/badge/Backend%20API-Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://e-commerce-dotnet-api-dkbsfuhaffbxhfar.southafricanorth-01.azurewebsites.net/swagger/index.html)
+[![Backend API](https://img.shields.io/badge/Backend%20API-Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://e-commerce-dotnet-api-dkbsfuhaffbxhfar.francecentral-01.azurewebsites.net/swagger/index.html)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-saif31%2Fecomm--api-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/saif31/ecomm-api)
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -344,7 +344,7 @@ npm run preview  # Preview the production build locally
 Create **`.env.local`**:
 
 ```env
-VITE_API_BASE_URL=https://e-commerce-dotnet-api-dkbsfuhaffbxhfar.southafricanorth-01.azurewebsites.net
+VITE_API_BASE_URL=https://e-commerce-dotnet-api-dkbsfuhaffbxhfar.francecentral-01.azurewebsites.net
 ```
 
 ---
@@ -419,7 +419,7 @@ See the full PR history here: <https://github.com/sefffo/ecommerce-dashboard/pul
 
 ### 🔗 Links
 
-[**Live Dashboard**](https://ecommerce-dashboard-one-tawny.vercel.app/) · [**Backend Repo**](https://github.com/sefffo/E-Commerce-dotnet-API) · [**Backend Swagger**](https://e-commerce-dotnet-api-dkbsfuhaffbxhfar.southafricanorth-01.azurewebsites.net/swagger/index.html) · [**Docker Hub**](https://hub.docker.com/r/saif31/ecomm-api)
+[**Live Dashboard**](https://ecommerce-dashboard-one-tawny.vercel.app/) · [**Backend Repo**](https://github.com/sefffo/E-Commerce-dotnet-API) · [**Backend Swagger**](https://e-commerce-dotnet-api-dkbsfuhaffbxhfar.francecentral-01.azurewebsites.net/swagger/index.html) · [**Docker Hub**](https://hub.docker.com/r/saif31/ecomm-api)
 
 ---
 
